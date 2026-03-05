@@ -33,4 +33,32 @@ export class UsersService {
   async findById(id: number): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id } });
   }
+
+  // ბალანსის ნახვა
+  async getBalance(userId: number): Promise<number> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new ConflictException('მომხმარებელი ვერ მოიძებნა');
+    }
+    return Number(user.balance);
+    // Number() იმიტომ რომ decimal ტიპი DB-დან string-ად მოდის
+    // მაგ: "5000.00" → 5000
+  }
+
+  // ბალანსიდან თანხის გამოკლება
+  async deductBalance(userId: number, amount: number): Promise<number> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new ConflictException('მომხმარებელი ვერ მოიძებნა');
+    }
+
+    const currentBalance = Number(user.balance);
+    if (currentBalance < amount) {
+      throw new ConflictException('არასაკმარისი ბალანსი');
+    }
+
+    const newBalance = currentBalance - amount;
+    await this.usersRepository.update(userId, { balance: newBalance });
+    return newBalance;
+  }
 }

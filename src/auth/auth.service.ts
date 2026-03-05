@@ -95,7 +95,8 @@ export class AuthService {
     }
     // password, refreshToken და სხვა sensitive ველებს არ ვაბრუნებთ
     const { password: _, refreshToken: __, ...result } = user;
-    return result;
+    // decimal ტიპი DB-დან string-ად მოდის ("5000.00"), Number()-ით რიცხვად ვაბრუნებთ
+    return { ...result, balance: Number(user.balance) };
   }
 
   async logout(userId: number) {
