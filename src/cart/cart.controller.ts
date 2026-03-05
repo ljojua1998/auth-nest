@@ -10,6 +10,7 @@ import {
   Request,
   ParseIntPipe,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { CartService } from './cart.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AddToCartDto } from './dto/add-to-cart.dto';
@@ -17,6 +18,7 @@ import { UpdateCartDto } from './dto/update-cart.dto';
 
 @Controller('cart')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 

@@ -8,13 +8,14 @@ import {
   Request,
   ParseIntPipe,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CheckoutDto } from './dto/checkout.dto';
 
-// ყველა endpoint protected — შეკვეთები მხოლოდ ავტორიზებულ იუზერს ეკუთვნის
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
