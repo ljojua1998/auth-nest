@@ -442,14 +442,14 @@ Transaction ROLLBACK → ყველაფერი უკან დაბრ�
 **Angular პარალელი:** Transaction = forkJoin() — ან ყველა request წარმატებით დასრულდება, ან არცერთი
 
 ### ფაილები:
-- [ ] `src/orders/entities/order.entity.ts`
-- [ ] `src/orders/entities/order-item.entity.ts`
-- [ ] `src/orders/dto/checkout.dto.ts`
-- [ ] `src/orders/orders.service.ts`
-- [ ] `src/orders/orders.controller.ts`
-- [ ] `src/orders/orders.module.ts`
-- [ ] `src/users/entities/user.entity.ts` — orders relation
-- [ ] `app.module.ts` — OrdersModule import
+- [x] `src/orders/entities/order.entity.ts`
+- [x] `src/orders/entities/order-item.entity.ts`
+- [x] `src/orders/dto/checkout.dto.ts`
+- [x] `src/orders/orders.service.ts`
+- [x] `src/orders/orders.controller.ts`
+- [x] `src/orders/orders.module.ts`
+- [x] `src/users/entities/user.entity.ts` — orders relation
+- [x] `app.module.ts` — OrdersModule import
 
 ---
 
@@ -495,7 +495,7 @@ Transaction ROLLBACK → ყველაფერი უკან დაბრ�
 ```
 
 ### ფაილები:
-- [ ] `src/auth/auth.service.ts` — getProfile() განახლება
+- [x] `src/auth/auth.service.ts` — getProfile() განახლება
 
 ---
 

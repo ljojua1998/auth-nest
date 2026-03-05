@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { CartItem } from '../../cart/entities/cart-item.entity';
+import { Order } from '../../orders/entities/order.entity';
 
 @Entity('users')
 export class User {
@@ -45,6 +46,9 @@ export class User {
   // Angular-ში ეს იქნებოდა: user.cartItems — nested array interface-ში
   @OneToMany(() => CartItem, (cartItem) => cartItem.user)
   cartItems: CartItem[];
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
 
   @CreateDateColumn()
   createdAt: Date;

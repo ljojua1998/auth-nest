@@ -89,13 +89,13 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
-    const user = await this.usersService.findById(userId);
+    // findByIdWithOrders — orders relation-ითაც ტვირთავს
+    const user = await this.usersService.findByIdWithOrders(userId);
     if (!user) {
       throw new UnauthorizedException('მომხმარებელი ვერ მოიძებნა');
     }
     // password, refreshToken და სხვა sensitive ველებს არ ვაბრუნებთ
     const { password: _, refreshToken: __, ...result } = user;
-    // decimal ტიპი DB-დან string-ად მოდის ("5000.00"), Number()-ით რიცხვად ვაბრუნებთ
     return { ...result, balance: Number(user.balance) };
   }
 

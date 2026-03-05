@@ -34,6 +34,17 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  // ID-ით მომხმარებლის პოვნა + orders relation
+  // relations: ['orders'] — orders ცხრილიდანაც წამოიღებს (LEFT JOIN)
+  // orders-ში eager: true არ გვაქვს (ყოველთვის არ გვჭირდება), ამიტომ ხელით ვტვირთავთ
+  async findByIdWithOrders(id: number): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { id },
+      relations: ['orders'],
+      order: { orders: { createdAt: 'DESC' } },
+    });
+  }
+
   // ბალანსის ნახვა
   async getBalance(userId: number): Promise<number> {
     const user = await this.findById(userId);
