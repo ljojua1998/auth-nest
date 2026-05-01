@@ -13,10 +13,10 @@
 | ფაზა | სტატუსი | ფაილი |
 |------|---------|-------|
 | Phase 1 — Foundation | DONE | ideas/phase1.md |
-| Phase 2 — Fantasy Core | TODO | — |
-| Phase 3 — Tournament & Scoring | TODO | — |
-| Phase 4 — Operations | TODO | — |
-| Phase 5 — Promotions & Polish | TODO | — |
+| Phase 2 — Fantasy Core | DONE | ideas/phase2.md |
+| Phase 3 — Tournament & Scoring | DONE | ideas/phase2.md |
+| Phase 4 — Operations | DONE | ideas/phase2.md |
+| Phase 5 — Promotions & Polish | DONE | ideas/phase2.md |
 | Phase 6 — Beta | TODO | — |
 
 სრული გეგმა: `ideas/plan.md`

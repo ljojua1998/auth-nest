@@ -6,32 +6,33 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
-  // Swagger კონფიგურაცია
-  // DocumentBuilder — API დოკუმენტაციის მეტა-ინფორმაცია
+  app.enableCors();
+
   const config = new DocumentBuilder()
-    .setTitle('Auth-Nest Shop API')
-    .setDescription('Auth + Shop სისტემის API დოკუმენტაცია')
+    .setTitle('WorldFantasy API')
+    .setDescription('ქართული Fantasy Football პლატფორმა — World Cup 2026')
     .setVersion('1.0')
-    // addBearerAuth — Swagger UI-ში "Authorize" ღილაკი გაჩნდება
-    // Bearer token-ს ჩაწერ და protected endpoint-ებს გატესტავ
     .addBearerAuth()
     .build();
 
-  // createDocument — სკანირებს ყველა Controller-ს, DTO-ს, Entity-ს
-  // ავტომატურად აგენერირებს endpoint-ების დოკუმენტაციას
   const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
-  // Swagger UI path: /fakeshopswagger
-  SwaggerModule.setup('fakeshopswagger', app, document);
-
-  // root path '/' → redirect to Swagger
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get('/', (req: any, res: any) => {
-    res.redirect('/fakeshopswagger');
+  expressApp.get('/', (_req: unknown, res: { redirect: (path: string) => void }) => {
+    res.redirect('/api');
   });
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`WorldFantasy API running on port ${process.env.PORT ?? 3000}`);
+  console.log(`Swagger: http://localhost:${process.env.PORT ?? 3000}/api`);
 }
 bootstrap();

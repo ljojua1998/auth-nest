@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { hash, compare } from 'bcryptjs';
 import { UsersService } from '../users/users.service';
+import { CardsService } from '../cards/cards.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -15,6 +16,7 @@ interface JwtPayload {
 export class AuthService {
   constructor(
     private usersService: UsersService,
+    private cardsService: CardsService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -28,6 +30,8 @@ export class AuthService {
       email,
       password: hashedPassword,
     });
+
+    await this.cardsService.issueCards(user.id);
 
     const { password: _, ...result } = user;
     return {
