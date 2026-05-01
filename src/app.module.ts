@@ -4,10 +4,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { ProductsModule } from './products/products.module';
-import { CartModule } from './cart/cart.module';
-import { OrdersModule } from './orders/orders.module';
 import { ChatModule } from './chat/chat.module';
+import { TiersModule } from './tiers/tiers.module';
+import { TeamsModule } from './teams/teams.module';
+import { PlayersModule } from './players/players.module';
 
 @Module({
   imports: [
@@ -29,13 +29,12 @@ import { ChatModule } from './chat/chat.module';
       inject: [ConfigService],
     }),
 
-    // ახალი მოდულები - Angular-შიც AppModule-ში imports-ში ამატებდი
     UsersModule,
     AuthModule,
-    ProductsModule,
-    CartModule,
-    OrdersModule,
     ChatModule,
+    TiersModule,
+    TeamsModule,
+    PlayersModule,
   ],
   controllers: [AppController],
   providers: [],

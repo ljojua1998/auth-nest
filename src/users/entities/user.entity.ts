@@ -4,10 +4,13 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
-import { CartItem } from '../../cart/entities/cart-item.entity';
-import { Order } from '../../orders/entities/order.entity';
+import { Exclude } from 'class-transformer';
+
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 
 @Entity('users')
 export class User {
@@ -21,10 +24,21 @@ export class User {
   email: string;
 
   @Column()
+  @Exclude()
   password: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 5000 })
-  balance: number;
+  @Column({
+    type: 'bigint',
+    default: 1000000,
+  })
+  coins: number;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
 
   @Column({ default: true })
   isVerified: boolean;
@@ -39,16 +53,8 @@ export class User {
   resetTokenExpiry: Date | null;
 
   @Column({ type: 'varchar', nullable: true })
+  @Exclude()
   refreshToken: string | null;
-
-  // OneToMany = ერთ User-ს აქვს ბევრი CartItem
-  // ეს DB-ში სვეტს არ ქმნის! მხოლოდ TypeORM-ს ეუბნება კავშირის შესახებ
-  // Angular-ში ეს იქნებოდა: user.cartItems — nested array interface-ში
-  @OneToMany(() => CartItem, (cartItem) => cartItem.user)
-  cartItems: CartItem[];
-
-  @OneToMany(() => Order, (order) => order.user)
-  orders: Order[];
 
   @CreateDateColumn()
   createdAt: Date;

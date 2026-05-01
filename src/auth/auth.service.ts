@@ -89,14 +89,9 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
-    // findByIdWithOrders — orders relation-ითაც ტვირთავს
-    const user = await this.usersService.findByIdWithOrders(userId);
-    if (!user) {
-      throw new UnauthorizedException('მომხმარებელი ვერ მოიძებნა');
-    }
-    // password, refreshToken და სხვა sensitive ველებს არ ვაბრუნებთ
+    const user = await this.usersService.findByIdOrFail(userId);
     const { password: _, refreshToken: __, ...result } = user;
-    return { ...result, balance: Number(user.balance) };
+    return { ...result, coins: Number(user.coins) };
   }
 
   async logout(userId: number) {
