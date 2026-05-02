@@ -44,6 +44,14 @@ export class PlayersController {
     return this.playersService.findById(id);
   }
 
+  @Get('players/:id/stats')
+  @ApiOperation({ summary: 'ფეხბ.-ის მატჩ-სტატისტიკა (ყველა მატჩი)' })
+  @ApiResponse({ status: 200, description: 'სტატისტიკა' })
+  @ApiResponse({ status: 404, description: 'ფეხბურთელი ვერ მოიძებნა' })
+  getStats(@Param('id', ParseIntPipe) id: number) {
+    return this.playersService.getPlayerStats(id);
+  }
+
   @Post('admin/players')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

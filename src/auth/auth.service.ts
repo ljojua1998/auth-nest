@@ -1,9 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
 import { hash, compare } from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { CardsService } from '../cards/cards.service';
+import { User } from '../users/entities/user.entity';
+import { UserCard, CardType } from '../cards/entities/user-card.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -19,25 +22,51 @@ export class AuthService {
     private cardsService: CardsService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private dataSource: DataSource,
   ) {}
 
   async register(registerDto: RegisterDto) {
     const { name, email, password } = registerDto;
     const hashedPassword = await hash(password, 10);
 
-    const user = await this.usersService.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
+    // BUG-C04: make user creation + card issuing atomic in a single transaction
+    // so a failed issueCards does not leave an orphaned user
+    const existingUser = await this.usersService.findByEmail(email);
+    if (existingUser) {
+      throw new ConflictException('ეს email უკვე გამოყენებულია. გთხოვთ გამოიყენოთ სხვა email.');
+    }
 
-    await this.cardsService.issueCards(user.id);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const { password: _, ...result } = user;
-    return {
-      message: 'რეგისტრაცია წარმატებით დასრულდა',
-      user: result,
-    };
+    try {
+      const newUser = queryRunner.manager.create(User, {
+        name,
+        email,
+        password: hashedPassword,
+      });
+      const user = await queryRunner.manager.save(User, newUser);
+
+      const cardTypes = [CardType.TRIPLE_CAPTAIN, CardType.WILDCARD, CardType.LIMITLESS];
+      const cards = cardTypes.map((type) =>
+        queryRunner.manager.create(UserCard, { userId: user.id, type, used: false }),
+      );
+      await queryRunner.manager.save(UserCard, cards);
+
+      await queryRunner.commitTransaction();
+
+      const { password: _, ...result } = user;
+      return {
+        message: 'რეგისტრაცია წარმატებით დასრულდა',
+        user: result,
+      };
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async login(loginDto: LoginDto) {
@@ -65,10 +94,16 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
+    // BUG-M02: validate REFRESH_TOKEN_SECRET is set
+    const refreshSecret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
+    if (!refreshSecret) {
+      throw new Error('REFRESH_TOKEN_SECRET env var is required');
+    }
+
     let payload: JwtPayload;
     try {
       payload = this.jwtService.verify<JwtPayload>(refreshToken, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: refreshSecret,
       });
     } catch {
       throw new UnauthorizedException('არასწორი ან ვადაგასული refresh token');
@@ -106,8 +141,18 @@ export class AuthService {
   private generateTokens(userId: number, email: string) {
     const payload: JwtPayload = { sub: userId, email };
 
+    // BUG-M02: validate REFRESH_TOKEN_SECRET is set to prevent silent fallback to undefined
+    const refreshSecret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
+    if (!refreshSecret) {
+      throw new Error('REFRESH_TOKEN_SECRET env var is required');
+    }
+
     const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    // BUG-005: use separate secret for refresh tokens
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: '7d',
+      secret: refreshSecret,
+    });
 
     return { accessToken, refreshToken };
   }

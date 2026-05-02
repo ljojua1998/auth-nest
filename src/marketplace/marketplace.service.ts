@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { MarketplaceStatus } from './entities/marketplace-status.entity';
 import { PlayersService } from '../players/players.service';
-import { UserTeamsService } from '../user-teams/user-teams.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { User } from '../users/entities/user.entity';
 import { UserTeam } from '../user-teams/entities/user-team.entity';
@@ -32,7 +31,6 @@ export class MarketplaceService {
     @InjectRepository(MarketplaceStatus)
     private statusRepo: Repository<MarketplaceStatus>,
     private playersService: PlayersService,
-    private userTeamsService: UserTeamsService,
     private transactionsService: TransactionsService,
     private dataSource: DataSource,
   ) {}
@@ -51,38 +49,65 @@ export class MarketplaceService {
   }
 
   async buy(userId: number, playerId: number): Promise<{ message: string; coinsLeft: number }> {
-    const status = await this.getStatus();
-    if (!status.isOpen) {
+    // Fast pre-check outside transaction (race window is acceptable — re-checked inside tx)
+    const preStatus = await this.getStatus();
+    if (!preStatus.isOpen) {
       throw new ForbiddenException('Marketplace ამჟამად დახურულია. ელოდე ეტაპის პაუზას.');
     }
 
     const player = await this.playersService.findById(playerId);
+
+    // BUG-012: reject eliminated team players
+    if (player.team.eliminated) {
+      throw new BadRequestException(`${player.name}-ის გუნდი ელიმინირებულია. ვეღარ ყიდულობ ამ ფეხბ.`);
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
+      // BUG-M05: re-check marketplace status inside transaction to close race window
+      const status = await queryRunner.manager.findOne(MarketplaceStatus, { where: { id: 1 } });
+      if (!status?.isOpen) {
+        throw new ForbiddenException('Marketplace ამჟამად დახურულია. ელოდე ეტაპის პაუზას.');
+      }
+
       const user = await queryRunner.manager.findOne(User, {
         where: { id: userId },
         lock: { mode: 'pessimistic_write' },
       });
       if (!user) throw new NotFoundException('მომხმარებელი ვერ მოიძებნა');
 
-      const team = await this.userTeamsService.getOrCreateTeam(userId);
+      // BUG-001: all team validation inside transaction with pessimistic lock
+      let userTeam = await queryRunner.manager.findOne(UserTeam, {
+        where: { userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!userTeam) {
+        userTeam = queryRunner.manager.create(UserTeam, {
+          userId,
+          formation: '4-3-3',
+          captainId: null,
+        });
+        userTeam = await queryRunner.manager.save(UserTeam, userTeam);
+      }
 
-      if (team.players.length >= TEAM_MAX) {
+      const utps = await queryRunner.manager.find(UserTeamPlayer, {
+        where: { userTeamId: userTeam.id },
+        relations: ['player'],
+      });
+
+      if (utps.length >= TEAM_MAX) {
         throw new BadRequestException(`გუნდი სავსეა (${TEAM_MAX} ფეხბ.). ჯერ გაყიდე ვინმე.`);
       }
 
-      const alreadyIn = team.players.find((p) => p.playerId === playerId);
+      const alreadyIn = utps.find((p) => p.playerId === playerId);
       if (alreadyIn) {
         throw new BadRequestException('ეს ფეხბურთელი შენს გუნდში უკვე არის');
       }
 
-      const positionCount = team.players.filter(
-        (p) => p.player.position === player.position,
-      ).length;
+      const positionCount = utps.filter((p) => p.player.position === player.position).length;
       if (positionCount >= POSITION_MAX[player.position]) {
         throw new BadRequestException(
           `${player.position} პოზიციაზე მაქსიმუმ ${POSITION_MAX[player.position]} ფეხბ. შეგიძლია. ახლა გყავს: ${positionCount}`,
@@ -100,18 +125,6 @@ export class MarketplaceService {
 
       const newCoins = currentCoins - price;
       await queryRunner.manager.update(User, userId, { coins: newCoins });
-
-      let userTeam = await queryRunner.manager.findOne(UserTeam, {
-        where: { userId },
-      });
-      if (!userTeam) {
-        userTeam = queryRunner.manager.create(UserTeam, {
-          userId,
-          formation: '4-3-3',
-          captainId: null,
-        });
-        userTeam = await queryRunner.manager.save(UserTeam, userTeam);
-      }
 
       const utp = queryRunner.manager.create(UserTeamPlayer, {
         userTeamId: userTeam.id,
@@ -151,29 +164,46 @@ export class MarketplaceService {
   }
 
   async sell(userId: number, playerId: number): Promise<{ message: string; coinsLeft: number }> {
-    const status = await this.getStatus();
-    if (!status.isOpen) {
+    // Fast pre-check outside transaction (race window is acceptable — re-checked inside tx)
+    const preStatus = await this.getStatus();
+    if (!preStatus.isOpen) {
       throw new ForbiddenException('Marketplace ამჟამად დახურულია.');
     }
 
     const player = await this.playersService.findById(playerId);
-    const team = await this.userTeamsService.getOrCreateTeam(userId);
-
-    const utpEntry = team.players.find((p) => p.playerId === playerId);
-    if (!utpEntry) {
-      throw new BadRequestException('ეს ფეხბურთელი შენს გუნდში არ არის');
-    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
+      // BUG-M05: re-check marketplace status inside transaction to close race window
+      const status = await queryRunner.manager.findOne(MarketplaceStatus, { where: { id: 1 } });
+      if (!status?.isOpen) {
+        throw new ForbiddenException('Marketplace ამჟამად დახურულია.');
+      }
+
       const user = await queryRunner.manager.findOne(User, {
         where: { id: userId },
         lock: { mode: 'pessimistic_write' },
       });
       if (!user) throw new NotFoundException('მომხმარებელი ვერ მოიძებნა');
+
+      // BUG-C01: lock UserTeam to prevent TOCTOU on parallel sell requests
+      const currentTeam = await queryRunner.manager.findOne(UserTeam, {
+        where: { userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const utpEntry = currentTeam
+        ? await queryRunner.manager.findOne(UserTeamPlayer, {
+            where: { userTeamId: currentTeam.id, playerId },
+            lock: { mode: 'pessimistic_write' },
+          })
+        : null;
+
+      if (!utpEntry) {
+        throw new BadRequestException('ეს ფეხბურთელი შენს გუნდში არ არის');
+      }
 
       const price = Number(player.tier.coinPrice);
       const currentCoins = Number(user.coins);
@@ -182,7 +212,6 @@ export class MarketplaceService {
       await queryRunner.manager.update(User, userId, { coins: newCoins });
       await queryRunner.manager.delete(UserTeamPlayer, { id: utpEntry.id });
 
-      const currentTeam = await queryRunner.manager.findOne(UserTeam, { where: { userId } });
       if (currentTeam?.captainId === playerId) {
         await queryRunner.manager.update(UserTeam, currentTeam.id, { captainId: null });
       }

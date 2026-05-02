@@ -9,6 +9,8 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { UpdateMatchStatusDto } from './dto/match-status.dto';
+import { CreateMatchDto } from './dto/create-match.dto';
+import { UpsertMatchStatDto } from './dto/upsert-match-stat.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -83,5 +85,22 @@ export class AdminController {
     @Body() dto: UpdateMatchStatusDto,
   ) {
     return this.adminService.updateMatchStatus(matchId, dto.status);
+  }
+
+  @Post('matches')
+  @ApiOperation({ summary: '[Admin] მატჩის ხელით შექმნა' })
+  @ApiResponse({ status: 201, description: 'მატჩი შეიქმნა' })
+  createMatch(@Body() dto: CreateMatchDto) {
+    return this.adminService.createMatch(dto);
+  }
+
+  @Post('matches/:matchId/stats')
+  @ApiOperation({ summary: '[Admin] ფეხბ. სტატისტიკის დამატება/განახლება' })
+  @ApiResponse({ status: 201, description: 'სტატისტიკა შეინახა' })
+  upsertMatchStat(
+    @Param('matchId', ParseIntPipe) matchId: number,
+    @Body() dto: UpsertMatchStatDto,
+  ) {
+    return this.adminService.upsertMatchStat(matchId, dto);
   }
 }

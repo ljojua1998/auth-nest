@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { LeaderboardSnapshot } from './entities/leaderboard-snapshot.entity';
 import { UserMatchScore } from '../matches/entities/user-match-score.entity';
 import { User } from '../users/entities/user.entity';
 import { TransactionsService } from '../transactions/transactions.service';
 import { TransactionType } from '../transactions/entities/transaction.entity';
-import { DataSource } from 'typeorm';
 
 const PRIZE_TABLE: Record<number, number> = {
   1: 1000000,
@@ -50,21 +49,28 @@ export class LeaderboardService {
   }
 
   async getGlobal(userId?: number) {
+    // BUG-019: join with user to include names
     const result = await this.userScoresRepo
       .createQueryBuilder('ums')
       .select('ums.userId', 'userId')
       .addSelect('SUM(ums.totalPoints)', 'totalPoints')
+      .addSelect('u.name', 'userName')
+      .leftJoin(User, 'u', 'u.id = ums.userId')
       .groupBy('ums.userId')
+      .addGroupBy('u.name')
       .orderBy('"totalPoints"', 'DESC')
       .limit(100)
-      .getRawMany<{ userId: number; totalPoints: string }>();
+      .getRawMany<{ userId: string; totalPoints: string; userName: string }>();
 
     const ranked = result.map((r, i) => ({
       rank: i + 1,
-      userId: r.userId,
+      // BUG-010: raw query returns userId as string from PostgreSQL
+      userId: Number(r.userId),
+      userName: r.userName,
       totalPoints: Number(r.totalPoints),
     }));
 
+    // BUG-010: compare with Number(r.userId) so equality works
     const myRank = userId ? ranked.find((r) => r.userId === userId) ?? null : null;
 
     return { top100: ranked, myRank };
@@ -79,8 +85,6 @@ export class LeaderboardService {
       .groupBy('ums.userId')
       .orderBy('"totalPoints"', 'DESC')
       .getRawMany<{ userId: string; totalPoints: string }>();
-
-    await this.snapshotsRepo.delete({ tournamentId });
 
     let rank = 1;
     const snapshots: Partial<LeaderboardSnapshot>[] = [];
@@ -107,7 +111,21 @@ export class LeaderboardService {
       rank += tied.length;
     }
 
-    await this.snapshotsRepo.save(snapshots as LeaderboardSnapshot[]);
+    // BUG-028: wrap delete + insert in a transaction
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      await queryRunner.manager.delete(LeaderboardSnapshot, { tournamentId });
+      await queryRunner.manager.save(LeaderboardSnapshot, snapshots as LeaderboardSnapshot[]);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+
     return { snapshotted: snapshots.length };
   }
 
@@ -130,7 +148,14 @@ export class LeaderboardService {
 
     try {
       let distributed = 0;
-      for (const [rank, userIds] of rankGroups.entries()) {
+      // BUG-H03: sort user IDs consistently to avoid deadlocks when locking multiple rows
+      const allRankEntries = [...rankGroups.entries()].map(([rank, userIds]) => ({
+        rank,
+        // sort userIds ascending so lock order is deterministic across transactions
+        userIds: [...userIds].sort((a, b) => a - b),
+      }));
+
+      for (const { rank, userIds } of allRankEntries) {
         const totalPrize = userIds.reduce((sum, _, idx) => {
           const r = rank + idx;
           return sum + (PRIZE_TABLE[r] ?? 0);

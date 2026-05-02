@@ -1,0 +1,36 @@
+import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { UsersService } from './users.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+@ApiTags('Users')
+@Controller('users')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get('me')
+  @ApiOperation({ summary: 'ჩემი პროფილი + Coin ბალანსი' })
+  @ApiResponse({ status: 200, description: 'User პროფილი' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMe(@Request() req: { user: { id: number } }) {
+    const user = await this.usersService.findByIdOrFail(req.user.id);
+    const { password: _, refreshToken: __, ...result } = user as any;
+    return { ...result, coins: Number(user.coins) };
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'პროფილის განახლება (სახელი)' })
+  @ApiResponse({ status: 200, description: 'პროფილი განახლდა' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  async updateMe(
+    @Request() req: { user: { id: number } },
+    @Body() dto: UpdateUserDto,
+  ) {
+    const user = await this.usersService.updateProfile(req.user.id, dto);
+    const { password: _, refreshToken: __, ...result } = user as any;
+    return { ...result, coins: Number(user.coins) };
+  }
+}

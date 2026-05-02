@@ -8,12 +8,15 @@ import { Player } from './entities/player.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { FilterPlayersDto } from './dto/filter-players.dto';
+import { MatchStat } from '../matches/entities/match-stat.entity';
 
 @Injectable()
 export class PlayersService {
   constructor(
     @InjectRepository(Player)
     private playersRepository: Repository<Player>,
+    @InjectRepository(MatchStat)
+    private matchStatsRepo: Repository<MatchStat>,
   ) {}
 
   async findAll(filters: FilterPlayersDto): Promise<Player[]> {
@@ -23,6 +26,9 @@ export class PlayersService {
       .leftJoinAndSelect('player.tier', 'tier')
       .orderBy('tier.coinPrice', 'DESC')
       .addOrderBy('player.name', 'ASC');
+
+    // BUG-L05: exclude eliminated team players from marketplace by default
+    qb.andWhere('team.eliminated = :eliminated', { eliminated: false });
 
     if (filters.position) {
       qb.andWhere('player.position = :position', { position: filters.position });
@@ -34,8 +40,10 @@ export class PlayersService {
       qb.andWhere('player.teamId = :teamId', { teamId: filters.teamId });
     }
     if (filters.search) {
-      qb.andWhere('LOWER(player.name) LIKE LOWER(:search)', {
-        search: `%${filters.search}%`,
+      // BUG-021: escape LIKE wildcards to prevent injection/unexpected results
+      const escaped = filters.search.replace(/[%_\\]/g, '\\$&');
+      qb.andWhere('LOWER(player.name) LIKE LOWER(:search) ESCAPE \'\\\'', {
+        search: `%${escaped}%`,
       });
     }
 
@@ -69,6 +77,15 @@ export class PlayersService {
       where: { teamId },
       relations: ['tier'],
       order: { position: 'ASC', name: 'ASC' },
+    });
+  }
+
+  async getPlayerStats(playerId: number): Promise<MatchStat[]> {
+    await this.findById(playerId);
+    return this.matchStatsRepo.find({
+      where: { playerId },
+      relations: ['match', 'match.homeTeam', 'match.awayTeam', 'match.tournament'],
+      order: { createdAt: 'DESC' },
     });
   }
 }

@@ -5,13 +5,16 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Unique,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
 import { Match } from './match.entity';
 import { Tournament } from '../../tournaments/entities/tournament.entity';
 
+// BUG-H07: enforce DB-level uniqueness — one score record per user per match
 @Entity('user_match_scores')
+@Unique(['userId', 'matchId'])
 export class UserMatchScore {
   @ApiProperty()
   @PrimaryGeneratedColumn()

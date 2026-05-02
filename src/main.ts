@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -14,7 +14,17 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
+  // BUG-M08: enable ClassSerializerInterceptor globally so @Exclude() on User entity works
+  // (prevents password, refreshToken from leaking in leaderboard and other responses)
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+  // BUG-013: restrict CORS to known origins
+  const allowedOrigin = process.env.CORS_ORIGIN ?? '*';
+  app.enableCors({
+    origin: allowedOrigin,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('WorldFantasy API')

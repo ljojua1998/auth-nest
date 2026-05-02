@@ -32,16 +32,32 @@ export class UserTeamsService {
   ) {}
 
   async getOrCreateTeam(userId: number): Promise<UserTeam> {
-    let team = await this.userTeamRepo.findOne({
+    const existing = await this.userTeamRepo.findOne({
       where: { userId },
       relations: ['players', 'players.player', 'players.player.tier', 'players.player.team'],
     });
-    if (!team) {
-      team = this.userTeamRepo.create({ userId, formation: '4-3-3', captainId: null });
-      team = await this.userTeamRepo.save(team);
-      team.players = [];
+    if (existing) return existing;
+
+    // BUG-M09: handle race condition on parallel first-time team creation
+    // If two requests arrive simultaneously, one INSERT will fail with unique violation
+    // — catch it and fall back to findOne
+    try {
+      const newTeam = this.userTeamRepo.create({ userId, formation: '4-3-3', captainId: null });
+      const saved = await this.userTeamRepo.save(newTeam);
+      saved.players = [];
+      return saved;
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      // PostgreSQL unique_violation error code
+      if (pgErr?.code === '23505') {
+        const team = await this.userTeamRepo.findOne({
+          where: { userId },
+          relations: ['players', 'players.player', 'players.player.tier', 'players.player.team'],
+        });
+        if (team) return team;
+      }
+      throw err;
     }
-    return team;
   }
 
   async getMyTeam(userId: number): Promise<UserTeam> {
@@ -112,14 +128,24 @@ export class UserTeamsService {
 
     this.validateFormationWithPlayers(team.formation, starterPositions);
 
+    // BUG-M04: only save UTPs that actually changed to reduce unnecessary UPDATE queries
+    const changedUtps: UserTeamPlayer[] = [];
     for (const item of dto.lineup) {
       const utp = teamPlayerMap.get(item.id);
-      if (!utp) continue;
-      utp.isStarter = item.isStarter;
-      utp.subOrder = item.isStarter ? null : (item.subOrder ?? null);
+      // BUG-008: throw instead of silently skipping invalid IDs
+      if (!utp) throw new BadRequestException(`UserTeamPlayer ID ${item.id} შენს გუნდში არ არის`);
+      const newIsStarter = item.isStarter;
+      const newSubOrder = item.isStarter ? null : (item.subOrder ?? null);
+      if (utp.isStarter !== newIsStarter || utp.subOrder !== newSubOrder) {
+        utp.isStarter = newIsStarter;
+        utp.subOrder = newSubOrder;
+        changedUtps.push(utp);
+      }
     }
 
-    await this.utpRepo.save([...teamPlayerMap.values()]);
+    if (changedUtps.length > 0) {
+      await this.utpRepo.save(changedUtps);
+    }
 
     if (team.captainId) {
       const captainInStarters = starters.find((s) => {
@@ -149,9 +175,17 @@ export class UserTeamsService {
     const expectedMid = parseInt(midStr);
     const expectedFwd = parseInt(fwdStr);
 
+    const actualGk = positions.filter((p) => p === PlayerPosition.GK).length;
     const actualDef = positions.filter((p) => p === PlayerPosition.DEF).length;
     const actualMid = positions.filter((p) => p === PlayerPosition.MID).length;
     const actualFwd = positions.filter((p) => p === PlayerPosition.FWD).length;
+
+    // BUG-016: also validate exactly 1 GK
+    if (actualGk !== 1) {
+      throw new BadRequestException(
+        `Starter-ებში ზუსტად 1 GK უნდა იყოს, არის: ${actualGk}`,
+      );
+    }
 
     if (actualDef !== expectedDef || actualMid !== expectedMid || actualFwd !== expectedFwd) {
       throw new BadRequestException(

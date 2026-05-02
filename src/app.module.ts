@@ -44,7 +44,8 @@ import { AdminModule } from './admin/admin.module';
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
+        // dev-ში synchronize:true, production-ში false (migrations გამოიყენება)
+        synchronize: process.env.NODE_ENV !== 'production',
         ssl: { rejectUnauthorized: false },
       }),
       inject: [ConfigService],

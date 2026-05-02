@@ -32,10 +32,6 @@ export class UserTeam {
   @Column({ type: 'int', nullable: true })
   captainId: number | null;
 
-  @ApiProperty({ example: false })
-  @Column({ default: false })
-  tripleCaptainActive: boolean;
-
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;

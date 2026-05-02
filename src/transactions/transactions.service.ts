@@ -30,10 +30,13 @@ export class TransactionsService {
     return manager.save(Transaction, tx);
   }
 
-  async getMyHistory(userId: number): Promise<Transaction[]> {
+  // BUG-M07: add pagination to prevent unbounded result set
+  async getMyHistory(userId: number, limit = 100, offset = 0): Promise<Transaction[]> {
     return this.transactionsRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
     });
   }
 }

@@ -37,6 +37,18 @@ export class TiersController {
     return this.tiersService.findAll();
   }
 
+  // BUG-H02: specific routes (/seed) must be registered before generic routes (/:id)
+  // to prevent future POST /:id from shadowing /seed
+  @Post('admin/tiers/seed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Default Tier-ების seed' })
+  @ApiResponse({ status: 201, description: 'Seed წარმატებით შესრულდა' })
+  seed() {
+    return this.tiersService.seed();
+  }
+
   @Post('admin/tiers')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -69,15 +81,5 @@ export class TiersController {
   @ApiResponse({ status: 404, description: 'Tier ვერ მოიძებნა' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.tiersService.remove(id);
-  }
-
-  @Post('admin/tiers/seed')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '[Admin] Default Tier-ების seed' })
-  @ApiResponse({ status: 201, description: 'Seed წარმატებით შესრულდა' })
-  seed() {
-    return this.tiersService.seed();
   }
 }

@@ -5,12 +5,15 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Unique,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserTeam } from './user-team.entity';
 import { Player } from '../../players/entities/player.entity';
 
+// BUG-H04: enforce DB-level uniqueness — one player per user team
 @Entity('user_team_players')
+@Unique(['userTeamId', 'playerId'])
 export class UserTeamPlayer {
   @ApiProperty()
   @PrimaryGeneratedColumn()

@@ -12,6 +12,7 @@ import { LeaderboardModule } from '../leaderboard/leaderboard.module';
 import { ScoringModule } from '../scoring/scoring.module';
 import { TournamentsModule } from '../tournaments/tournaments.module';
 import { TransactionsModule } from '../transactions/transactions.module';
+import { MatchesModule } from '../matches/matches.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TransactionsModule } from '../transactions/transactions.module';
     ScoringModule,
     TournamentsModule,
     TransactionsModule,
+    MatchesModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],
