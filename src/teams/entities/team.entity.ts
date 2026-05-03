@@ -26,7 +26,7 @@ export class Team {
   flag: string | null;
 
   @ApiProperty({ example: 'A', description: 'ჯგუფი (A-H)' })
-  @Column({ length: 1, nullable: true })
+  @Column({ type: 'varchar', length: 1, nullable: true })
   group: string | null;
 
   @ApiProperty({ example: false })

@@ -14,8 +14,6 @@ export default new DataSource({
   url: process.env.DATABASE_URL,
   entities: ['src/**/*.entity.ts'],
   migrations: ['src/migrations/*.ts'],
-  ssl: process.env.DATABASE_URL?.includes('neon')
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: { rejectUnauthorized: false },
   logging: ['migration'],
 });
