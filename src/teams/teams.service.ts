@@ -46,38 +46,66 @@ export class TeamsService {
 
   async seed(): Promise<{ created: number }> {
     const worldCupTeams = [
-      { name: 'Argentina', code: 'ARG', group: 'A' },
-      { name: 'Australia', code: 'AUS', group: 'A' },
-      { name: 'Morocco', code: 'MAR', group: 'A' },
+      // Group A
+      { name: 'USA', code: 'USA', group: 'A' },
+      { name: 'Panama', code: 'PAN', group: 'A' },
+      { name: 'Albania', code: 'ALB', group: 'A' },
       { name: 'Ukraine', code: 'UKR', group: 'A' },
-      { name: 'Spain', code: 'ESP', group: 'B' },
-      { name: 'Netherlands', code: 'NED', group: 'B' },
-      { name: 'Colombia', code: 'COL', group: 'B' },
-      { name: 'Ecuador', code: 'ECU', group: 'B' },
-      { name: 'France', code: 'FRA', group: 'C' },
-      { name: 'England', code: 'ENG', group: 'C' },
-      { name: 'Senegal', code: 'SEN', group: 'C' },
-      { name: 'Mexico', code: 'MEX', group: 'C' },
+      // Group B
+      { name: 'Mexico', code: 'MEX', group: 'B' },
+      { name: 'Jamaica', code: 'JAM', group: 'B' },
+      { name: 'Honduras', code: 'HON', group: 'B' },
+      { name: 'Uzbekistan', code: 'UZB', group: 'B' },
+      // Group C
+      { name: 'Canada', code: 'CAN', group: 'C' },
+      { name: 'Morocco', code: 'MAR', group: 'C' },
+      { name: 'Belgium', code: 'BEL', group: 'C' },
+      { name: 'Croatia', code: 'CRO', group: 'C' },
+      // Group D
       { name: 'Brazil', code: 'BRA', group: 'D' },
-      { name: 'Portugal', code: 'POR', group: 'D' },
-      { name: 'USA', code: 'USA', group: 'D' },
-      { name: 'Uruguay', code: 'URU', group: 'D' },
-      { name: 'Germany', code: 'GER', group: 'E' },
-      { name: 'Belgium', code: 'BEL', group: 'E' },
-      { name: 'Croatia', code: 'CRO', group: 'E' },
-      { name: 'Japan', code: 'JPN', group: 'E' },
-      { name: 'Italy', code: 'ITA', group: 'F' },
-      { name: 'Denmark', code: 'DEN', group: 'F' },
+      { name: 'Germany', code: 'GER', group: 'D' },
+      { name: 'Japan', code: 'JPN', group: 'D' },
+      { name: 'Chile', code: 'CHI', group: 'D' },
+      // Group E
+      { name: 'Argentina', code: 'ARG', group: 'E' },
+      { name: 'France', code: 'FRA', group: 'E' },
+      { name: 'Netherlands', code: 'NED', group: 'E' },
+      { name: 'Saudi Arabia', code: 'KSA', group: 'E' },
+      // Group F
+      { name: 'Spain', code: 'ESP', group: 'F' },
+      { name: 'Portugal', code: 'POR', group: 'F' },
+      { name: 'England', code: 'ENG', group: 'F' },
       { name: 'Serbia', code: 'SRB', group: 'F' },
-      { name: 'Cameroon', code: 'CMR', group: 'F' },
+      // Group G
+      { name: 'Italy', code: 'ITA', group: 'G' },
       { name: 'Switzerland', code: 'SUI', group: 'G' },
-      { name: 'Turkey', code: 'TUR', group: 'G' },
-      { name: 'Chile', code: 'CHI', group: 'G' },
-      { name: 'Nigeria', code: 'NGA', group: 'G' },
-      { name: 'South Korea', code: 'KOR', group: 'H' },
-      { name: 'Poland', code: 'POL', group: 'H' },
-      { name: 'Iran', code: 'IRN', group: 'H' },
-      { name: 'Canada', code: 'CAN', group: 'H' },
+      { name: 'South Korea', code: 'KOR', group: 'G' },
+      { name: 'Colombia', code: 'COL', group: 'G' },
+      // Group H
+      { name: 'Uruguay', code: 'URU', group: 'H' },
+      { name: 'Ecuador', code: 'ECU', group: 'H' },
+      { name: 'Denmark', code: 'DEN', group: 'H' },
+      { name: 'Senegal', code: 'SEN', group: 'H' },
+      // Group I
+      { name: 'Turkey', code: 'TUR', group: 'I' },
+      { name: 'Austria', code: 'AUT', group: 'I' },
+      { name: 'Nigeria', code: 'NGA', group: 'I' },
+      { name: 'Costa Rica', code: 'CRC', group: 'I' },
+      // Group J
+      { name: 'Poland', code: 'POL', group: 'J' },
+      { name: 'Hungary', code: 'HUN', group: 'J' },
+      { name: 'Iran', code: 'IRN', group: 'J' },
+      { name: 'Venezuela', code: 'VEN', group: 'J' },
+      // Group K
+      { name: 'Paraguay', code: 'PAR', group: 'K' },
+      { name: 'Australia', code: 'AUS', group: 'K' },
+      { name: 'Egypt', code: 'EGY', group: 'K' },
+      { name: 'Scotland', code: 'SCO', group: 'K' },
+      // Group L
+      { name: 'DR Congo', code: 'COD', group: 'L' },
+      { name: 'Slovakia', code: 'SVK', group: 'L' },
+      { name: 'South Africa', code: 'RSA', group: 'L' },
+      { name: 'New Zealand', code: 'NZL', group: 'L' },
     ];
 
     let created = 0;
