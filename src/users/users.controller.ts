@@ -17,7 +17,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMe(@Request() req: { user: { id: number } }) {
     const user = await this.usersService.findByIdOrFail(req.user.id);
-    const { password: _, refreshToken: __, ...result } = user as any;
+    const { password: _, refreshToken: __, verificationToken: ___, resetToken: ____, resetTokenExpiry: _____, ...result } = user as any;
     return { ...result, coins: Number(user.coins) };
   }
 
@@ -30,7 +30,7 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ) {
     const user = await this.usersService.updateProfile(req.user.id, dto);
-    const { password: _, refreshToken: __, ...result } = user as any;
+    const { password: _, refreshToken: __, verificationToken: ___, resetToken: ____, resetTokenExpiry: _____, ...result } = user as any;
     return { ...result, coins: Number(user.coins) };
   }
 }

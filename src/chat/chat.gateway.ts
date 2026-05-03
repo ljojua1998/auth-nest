@@ -35,7 +35,7 @@ interface SocketData {
 
 // @WebSocketGateway — Controller-ის ანალოგი WebSocket-ისთვის
 // cors: true — Frontend-იდან კავშირის ნებართვა (როგორც HTTP-ზე CORS)
-@WebSocketGateway({ cors: true })
+@WebSocketGateway({ cors: { origin: process.env.CORS_ORIGIN ?? (process.env.NODE_ENV === 'production' ? false : '*') } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // @WebSocketServer — Socket.IO სერვერის ინსტანცი
   // ეს საშუალებას გაძლევს ყველა client-ზე broadcast გააკეთო

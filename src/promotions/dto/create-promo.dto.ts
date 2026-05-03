@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsDateString,
   Min,
+  Max,
   MaxLength,
   Matches,
 } from 'class-validator';
@@ -27,6 +28,7 @@ export class CreatePromoDto {
   @ApiProperty({ example: 50000 })
   @IsInt()
   @Min(1)
+  @Max(50000000)
   bonusCoins: number;
 
   @ApiPropertyOptional({ example: 100, nullable: true })

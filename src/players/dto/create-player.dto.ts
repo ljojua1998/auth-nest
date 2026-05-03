@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsInt,
   IsOptional,
+  IsUrl,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -21,7 +22,8 @@ export class CreatePlayerDto {
 
   @ApiPropertyOptional({ example: 'https://...photo.png' })
   @IsOptional()
-  @IsString()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  @MaxLength(500)
   photo?: string;
 
   @ApiPropertyOptional({ example: 123456 })

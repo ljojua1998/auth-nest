@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { PlayerPosition } from '../entities/player.entity';
 
@@ -26,5 +26,6 @@ export class FilterPlayersDto {
   @ApiPropertyOptional({ example: 'Messi' })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   search?: string;
 }

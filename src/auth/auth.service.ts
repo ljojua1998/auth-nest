@@ -56,7 +56,7 @@ export class AuthService {
 
       await queryRunner.commitTransaction();
 
-      const { password: _, ...result } = user;
+      const { password: _, refreshToken: __, verificationToken: ___, resetToken: ____, resetTokenExpiry: _____, ...result } = user;
       return {
         message: 'რეგისტრაცია წარმატებით დასრულდა',
         user: result,
@@ -129,7 +129,7 @@ export class AuthService {
 
   async getProfile(userId: number) {
     const user = await this.usersService.findByIdOrFail(userId);
-    const { password: _, refreshToken: __, ...result } = user;
+    const { password: _, refreshToken: __, verificationToken: ___, resetToken: ____, resetTokenExpiry: _____, ...result } = user;
     return { ...result, coins: Number(user.coins) };
   }
 

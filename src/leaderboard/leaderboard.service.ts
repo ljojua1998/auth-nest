@@ -29,7 +29,7 @@ export class LeaderboardService {
   async getLeaderboard(
     tournamentId: number,
     userId?: number,
-  ): Promise<{ top100: LeaderboardSnapshot[]; myRank: LeaderboardSnapshot | null }> {
+  ): Promise<{ top100: unknown[]; myRank: unknown | null }> {
     const top100 = await this.snapshotsRepo.find({
       where: { tournamentId },
       order: { rank: 'ASC' },
@@ -45,7 +45,10 @@ export class LeaderboardService {
       });
     }
 
-    return { top100, myRank };
+    return {
+      top100: top100.map((s) => ({ ...s, user: { id: s.user.id, name: s.user.name } })),
+      myRank: myRank ? { ...myRank, user: { id: myRank.user.id, name: myRank.user.name } } : null,
+    };
   }
 
   async getGlobal(userId?: number) {

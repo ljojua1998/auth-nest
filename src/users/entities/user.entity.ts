@@ -44,12 +44,15 @@ export class User {
   isVerified: boolean;
 
   @Column({ type: 'varchar', nullable: true })
+  @Exclude()
   verificationToken: string | null;
 
   @Column({ type: 'varchar', nullable: true })
+  @Exclude()
   resetToken: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
+  @Exclude()
   resetTokenExpiry: Date | null;
 
   @Column({ type: 'varchar', nullable: true })
