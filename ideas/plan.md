@@ -8,7 +8,7 @@
 
 ## Implementation Status (2026-05-03)
 
-**სრულად დასრულებული:** Sprint 1–5 + QA rounds 1&2 + Security audit + Referral system + Railway deploy
+**სრულად დასრულებული:** Sprint 1–5 + QA rounds 1&2 + Security audit + Referral system + Railway deploy + Frontend API docs + Marketplace bug fix
 
 ### Endpoint Status
 
@@ -66,8 +66,8 @@
 | GET /admin/promo | DONE |
 | PATCH /admin/promo/:id | DONE |
 | DELETE /admin/promo/:id | DONE |
-| POST /admin/open-marketplace | DONE |
-| POST /admin/close-marketplace | DONE |
+| POST /admin/open-marketplace | DONE (bug fixed 91457d8) |
+| POST /admin/close-marketplace | DONE (bug fixed 91457d8) |
 | POST /admin/calculate-points/:matchId | DONE |
 | POST /admin/process-elimination/:teamId | DONE |
 | POST /admin/distribute-prizes/:tournamentId | DONE |

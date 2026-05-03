@@ -21,11 +21,15 @@
 | Phase 6 — QA Bug Fixes (28 bugs) | DONE | ideas/bugs2.md + ideas/phase3.md |
 | Phase 6 — Security Audit | DONE | ideas/security.md + ideas/qa-security.md |
 | Phase 6 — Referral System | DONE | ideas/phase6_referral.md |
+| Phase 6 — Frontend API Docs | DONE | ideas/api-docs.md |
+| Phase 6 — Bug fix: marketplace open/close | DONE | commit 91457d8 |
 | Phase 7 — Player Data Sync | TODO | ideas/limit.md |
 
 **მიმდინარე Deploy:** Railway — `https://auth-nest-production.up.railway.app`
 **DB:** Railway PostgreSQL (5 migrations run: 001–005)
 **Player Data:** 1,739 ფეხბ. / 82 ნაკრები (48 WC 2026 + UEFA qualifiers)
+**Test Admin:** test1@gmail.com / testtest1 (ID:9, role:admin)
+**Marketplace:** production-ზე OPEN
 
 სრული გეგმა: `ideas/plan.md`
 პროექტის სპეციფიკაცია: `ideas/idea.md`
