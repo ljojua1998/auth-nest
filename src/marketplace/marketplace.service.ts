@@ -246,18 +246,17 @@ export class MarketplaceService {
   }
 
   async open(): Promise<MarketplaceStatus> {
-    await this.statusRepo.upsert(
-      { id: 1, isOpen: true, openedAt: new Date(), closedAt: null },
-      ['id'],
-    );
-    return this.getStatus();
+    const status = await this.getStatus();
+    status.isOpen = true;
+    status.openedAt = new Date();
+    status.closedAt = null;
+    return this.statusRepo.save(status);
   }
 
   async close(): Promise<MarketplaceStatus> {
-    await this.statusRepo.upsert(
-      { id: 1, isOpen: false, closedAt: new Date() },
-      ['id'],
-    );
-    return this.getStatus();
+    const status = await this.getStatus();
+    status.isOpen = false;
+    status.closedAt = new Date();
+    return this.statusRepo.save(status);
   }
 }
