@@ -128,4 +128,33 @@ export class UsersService {
     await this.usersRepository.update(userId, data);
     return this.findByIdOrFail(userId);
   }
+
+  generateReferralCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = 'WF-';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
+  async findByReferralCode(code: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { referralCode: code } });
+  }
+
+  async getReferralInfo(userId: number): Promise<{
+    referralCode: string | null;
+    referredCount: number;
+    totalEarned: number;
+  }> {
+    const user = await this.findByIdOrFail(userId);
+    const referredCount = await this.usersRepository.count({
+      where: { referredBy: userId },
+    });
+    return {
+      referralCode: user.referralCode,
+      referredCount,
+      totalEarned: referredCount * 10_000_000,
+    };
+  }
 }

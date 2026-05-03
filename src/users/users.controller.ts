@@ -33,4 +33,12 @@ export class UsersController {
     const { password: _, refreshToken: __, verificationToken: ___, resetToken: ____, resetTokenExpiry: _____, ...result } = user as any;
     return { ...result, coins: Number(user.coins) };
   }
+
+  @Get('me/referral')
+  @ApiOperation({ summary: 'ჩემი referral კოდი და სტატისტიკა' })
+  @ApiResponse({ status: 200, description: 'Referral info' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMyReferral(@Request() req: { user: { id: number } }) {
+    return this.usersService.getReferralInfo(req.user.id);
+  }
 }

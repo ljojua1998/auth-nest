@@ -5,8 +5,10 @@ import { DataSource } from 'typeorm';
 import { hash, compare } from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { CardsService } from '../cards/cards.service';
+import { TransactionsService } from '../transactions/transactions.service';
 import { User } from '../users/entities/user.entity';
 import { UserCard, CardType } from '../cards/entities/user-card.entity';
+import { TransactionType } from '../transactions/entities/transaction.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -20,6 +22,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private cardsService: CardsService,
+    private transactionsService: TransactionsService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private dataSource: DataSource,
@@ -45,6 +48,7 @@ export class AuthService {
         name,
         email,
         password: hashedPassword,
+        referralCode: this.usersService.generateReferralCode(),
       });
       const user = await queryRunner.manager.save(User, newUser);
 
@@ -53,6 +57,28 @@ export class AuthService {
         queryRunner.manager.create(UserCard, { userId: user.id, type, used: false }),
       );
       await queryRunner.manager.save(UserCard, cards);
+
+      if (registerDto.referralCode) {
+        const referrer = await queryRunner.manager.findOne(User, {
+          where: { referralCode: registerDto.referralCode },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (referrer && referrer.id !== user.id) {
+          const before = Number(referrer.coins);
+          const after = before + 10_000_000;
+          await queryRunner.manager.update(User, referrer.id, { coins: after });
+          await this.transactionsService.log(
+            queryRunner.manager,
+            referrer.id,
+            TransactionType.REFERRAL_BONUS,
+            10_000_000,
+            before,
+            after,
+            `Referral bonus — ${user.name} დარეგისტრირდა შენი კოდით`,
+          );
+          await queryRunner.manager.update(User, user.id, { referredBy: referrer.id });
+        }
+      }
 
       await queryRunner.commitTransaction();
 

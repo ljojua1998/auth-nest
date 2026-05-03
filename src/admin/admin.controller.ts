@@ -48,7 +48,9 @@ export class AdminController {
   @Post('snapshot-leaderboard/:tournamentId')
   @ApiOperation({ summary: '[Admin] Leaderboard-ის snapshot (ეტაპის ბოლოს)' })
   @ApiResponse({ status: 201, description: 'Snapshot შეიქმნა' })
-  snapshotLeaderboard(@Param('tournamentId', ParseIntPipe) tournamentId: number) {
+  snapshotLeaderboard(
+    @Param('tournamentId', ParseIntPipe) tournamentId: number,
+  ) {
     return this.adminService.snapshotLeaderboard(tournamentId);
   }
 

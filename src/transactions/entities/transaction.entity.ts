@@ -16,6 +16,7 @@ export enum TransactionType {
   PRIZE = 'prize',
   PROMO = 'promo',
   ELIMINATION_REFUND = 'elimination_refund',
+  REFERRAL_BONUS = 'referral_bonus',
 }
 
 @Entity('transactions')

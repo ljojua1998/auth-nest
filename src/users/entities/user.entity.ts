@@ -59,6 +59,13 @@ export class User {
   @Exclude()
   refreshToken: string | null;
 
+  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
+  @Exclude()
+  referralCode: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  referredBy: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

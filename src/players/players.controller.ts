@@ -52,6 +52,16 @@ export class PlayersController {
     return this.playersService.getPlayerStats(id);
   }
 
+  @Post('admin/players/seed-top5')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] ESP/BRA/ENG/ARG/GER ფეხბ. seed API-Football data-დან' })
+  @ApiResponse({ status: 201, description: 'Seed დასრულდა' })
+  seedTop5() {
+    return this.playersService.seedTop5Teams();
+  }
+
   @Post('admin/players')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
