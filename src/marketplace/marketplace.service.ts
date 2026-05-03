@@ -80,9 +80,11 @@ export class MarketplaceService {
       if (!user) throw new NotFoundException('მომხმარებელი ვერ მოიძებნა');
 
       // BUG-001: all team validation inside transaction with pessimistic lock
+      // loadEagerRelations: false — prevents FOR UPDATE + LEFT JOIN which PostgreSQL rejects
       let userTeam = await queryRunner.manager.findOne(UserTeam, {
         where: { userId },
         lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
       });
       if (!userTeam) {
         userTeam = queryRunner.manager.create(UserTeam, {
@@ -190,9 +192,11 @@ export class MarketplaceService {
       if (!user) throw new NotFoundException('მომხმარებელი ვერ მოიძებნა');
 
       // BUG-C01: lock UserTeam to prevent TOCTOU on parallel sell requests
+      // loadEagerRelations: false — prevents FOR UPDATE + LEFT JOIN which PostgreSQL rejects
       const currentTeam = await queryRunner.manager.findOne(UserTeam, {
         where: { userId },
         lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
       });
       const utpEntry = currentTeam
         ? await queryRunner.manager.findOne(UserTeamPlayer, {
