@@ -1,5 +1,6 @@
-# Phase 2 — Fantasy Core
+# Phase 2 — Fantasy Core (+ Phases 3, 4, 5)
 > Phase 2, 3, 4, 5 ერთ session-ში. თარიღი: 2026-05-01
+> სტატუსი: DONE — ყველა bug შეასწორდა Phase 3-ში. Security audit გაიარა.
 
 ---
 

@@ -1,8 +1,106 @@
 # WorldFantasy — Build Plan
 
 > ქართული Fantasy Football პლატფორმა World Cup 2026-ისთვის
-> Backend: NestJS + TypeORM + PostgreSQL (Neon)
+> Backend: NestJS + TypeORM + PostgreSQL (Railway)
 > Deadline: ივნისი 11, 2026
+
+---
+
+## Implementation Status (2026-05-03)
+
+**სრულად დასრულებული:** Sprint 1–5 + QA rounds 1&2 + Security audit + Referral system + Railway deploy
+
+### Endpoint Status
+
+| Endpoint | სტატუსი |
+|----------|---------|
+| POST /auth/register | DONE |
+| POST /auth/login | DONE |
+| POST /auth/refresh | DONE |
+| POST /auth/logout | DONE |
+| GET /auth/profile | DONE |
+| GET /users/me | DONE |
+| PATCH /users/me | DONE |
+| GET /users/me/referral | DONE |
+| GET /tiers | DONE |
+| POST /admin/tiers | DONE |
+| PATCH /admin/tiers/:id | DONE |
+| DELETE /admin/tiers/:id | DONE |
+| POST /admin/tiers/seed | DONE |
+| GET /teams | DONE |
+| GET /teams/:id | DONE |
+| GET /teams/:id/players | DONE |
+| POST /admin/teams/seed | DONE (48 teams, groups A-L) |
+| POST /admin/teams/sync | TODO (API-Football paid plan) |
+| GET /players | DONE |
+| GET /players/:id | DONE |
+| GET /players/:id/stats | DONE |
+| POST /admin/players | DONE |
+| PATCH /admin/players/:id | DONE |
+| POST /admin/players/seed-top5 | DONE |
+| POST /admin/players/sync-details | TODO (API-Football paid plan) |
+| GET /market | DONE |
+| GET /market/status | DONE |
+| POST /market/buy | DONE |
+| POST /market/sell | DONE |
+| GET /my-team | DONE |
+| POST /my-team/formation | DONE |
+| POST /my-team/captain | DONE |
+| POST /my-team/lineup | DONE |
+| GET /my-team/history | DONE |
+| GET /cards | DONE |
+| POST /cards/triple-captain | DONE |
+| POST /cards/wildcard | DONE |
+| POST /cards/limitless | DONE |
+| GET /tournaments | DONE |
+| GET /tournaments/current | DONE |
+| GET /matches | DONE |
+| GET /matches/:id | DONE |
+| GET /matches/live | DONE |
+| GET /leaderboard/:tournamentId | DONE |
+| GET /leaderboard/global | DONE |
+| GET /transactions/me | DONE |
+| POST /promo/redeem | DONE |
+| GET /promo/my-redemptions | DONE |
+| POST /admin/promo | DONE |
+| GET /admin/promo | DONE |
+| PATCH /admin/promo/:id | DONE |
+| DELETE /admin/promo/:id | DONE |
+| POST /admin/open-marketplace | DONE |
+| POST /admin/close-marketplace | DONE |
+| POST /admin/calculate-points/:matchId | DONE |
+| POST /admin/process-elimination/:teamId | DONE |
+| POST /admin/distribute-prizes/:tournamentId | DONE |
+| POST /admin/snapshot-leaderboard/:tournamentId | DONE |
+| POST /admin/activate-tournament/:tournamentId | DONE |
+| POST /admin/complete-tournament/:tournamentId | DONE |
+| POST /admin/match-status/:matchId | DONE |
+| POST /admin/matches | DONE |
+| POST /admin/matches/:matchId/stats | DONE |
+| POST /admin/sync-match-stats/:matchId | TODO (API-Football paid plan) |
+
+### DB Migrations
+
+| # | Migration | სტატუსი |
+|---|-----------|---------|
+| 001 | InitialSchema | RUN |
+| 002 | AddUniqueConstraints | RUN |
+| 003 | PromoRedemptionUniqueConstraint | RUN |
+| 004 | AddReferralCode | RUN |
+| 005 | AddMissingIndexes | RUN |
+| 006 | AddPlayerFields (age/number/birthDate/...) | TODO |
+
+### Player Data
+
+| | |
+|-|-|
+| სულ ფეხბ. | 1,739 |
+| სულ ნაკრები DB-ში | 82 (48 WC + UEFA qualifiers) |
+| Superstar tier | 23 |
+| Strong tier | 725 |
+| Average tier | 723 |
+| Reserve tier | 268 |
+| მკლოდ IRL squad | 1 (API limit hit) |
 
 ---
 

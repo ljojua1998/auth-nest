@@ -1,5 +1,6 @@
 # Phase 1 — Foundation
 > Sprint 1 დასრულდა. თარიღი: 2026-05-01
+> სტატუსი: DONE — ყველა QA bug შეასწორდა Phase 3-ში (bugs2.md + phase3.md)
 
 ---
 
@@ -51,7 +52,7 @@
 **Validations:** `@IsString @MaxLength(50)` name, `@IsInt @Min(1)` coinPrice, duplicate name → 409
 
 ### 5. Teams Module (`src/teams/`)
-**Entity:** `id`, `name` (unique), `code` (3-char, unique), `flag`, `group` (A-H), `eliminated` (bool, default: false), `createdAt`
+**Entity:** `id`, `name` (unique), `code` (3-char, unique), `flag`, `group` (A-L), `eliminated` (bool, default: false), `createdAt`
 
 **Endpoints:**
 - `GET /teams` — Public, group ASC + name ASC
@@ -61,7 +62,7 @@
 - `POST /admin/teams/seed` — Admin only, 32 World Cup ნაკრები
 - `POST /admin/teams/:id/eliminate` — Admin only, `eliminated: true`
 
-**Seed data:** 32 ნაკრები A-H ჯგუფებში
+**Seed data:** 48 ნაკრები A-L ჯგუფებში (World Cup 2026 format — განახლდა commit e1e3649)
 
 ### 6. Players Module (`src/players/`)
 **Entity:** `id`, `name`, `position` (enum: GK/DEF/MID/FWD), `photo`, `apiFootballId` (nullable, unique), `teamId` (FK), `tierId` (FK), `createdAt`
@@ -159,7 +160,7 @@ src/
 - [ ] `PATCH /admin/tiers/9999` → `404 Not Found`
 
 ### Teams
-- [ ] `POST /admin/teams/seed` → 32 ნაკრები შეიქმნება
+- [ ] `POST /admin/teams/seed` → 48 ნაკრები შეიქმნება (A-L ჯგუფები)
 - [ ] `GET /teams` → group ASC დალაგება
 - [ ] `GET /teams/:id/players` არარსებული id → `404`
 - [ ] `POST /admin/teams` code: "AB" (2 char) → `400`
