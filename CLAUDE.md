@@ -23,6 +23,7 @@
 | Phase 6 — Referral System | DONE | ideas/phase6_referral.md |
 | Phase 6 — Frontend API Docs | DONE | ideas/api-docs.md |
 | Phase 6 — Bug fix: marketplace open/close | DONE | commit 91457d8 |
+| Phase 6 — Bug fix: buy/sell 500 (FOR UPDATE + LEFT JOIN) | DONE | commit 0c8810f |
 | Phase 7 — Player Data Sync | TODO | ideas/limit.md |
 
 **მიმდინარე Deploy:** Railway — `https://auth-nest-production.up.railway.app`
