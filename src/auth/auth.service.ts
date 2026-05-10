@@ -65,13 +65,13 @@ export class AuthService {
         });
         if (referrer && referrer.id !== user.id) {
           const before = Number(referrer.coins);
-          const after = before + 10_000_000;
+          const after = before + 1_000_000;
           await queryRunner.manager.update(User, referrer.id, { coins: after });
           await this.transactionsService.log(
             queryRunner.manager,
             referrer.id,
             TransactionType.REFERRAL_BONUS,
-            10_000_000,
+            1_000_000,
             before,
             after,
             `Referral bonus — ${user.name} დარეგისტრირდა შენი კოდით`,

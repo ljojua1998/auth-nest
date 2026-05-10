@@ -29,7 +29,7 @@ export class User {
 
   @Column({
     type: 'bigint',
-    default: 1000000,
+    default: 10000000,
   })
   coins: number;
 

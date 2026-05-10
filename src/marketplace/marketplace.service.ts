@@ -16,6 +16,7 @@ import { UserTeamHistory, TransferAction } from '../user-teams/entities/user-tea
 import { TransactionType } from '../transactions/entities/transaction.entity';
 import { PlayerPosition } from '../players/entities/player.entity';
 import { FilterPlayersDto } from '../players/dto/filter-players.dto';
+import { Player } from '../players/entities/player.entity';
 
 const TEAM_MAX = 15;
 const POSITION_MAX: Record<PlayerPosition, number> = {
@@ -241,6 +242,174 @@ export class MarketplaceService {
 
       await queryRunner.commitTransaction();
       return { message: `${player.name} გაიყიდა`, coinsLeft: newCoins };
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async saveTeam(
+    userId: number,
+    playerIds: number[],
+  ): Promise<{ message: string; coinsLeft: number; bought: string[] }> {
+    // Deduplicate
+    const uniqueIds = [...new Set(playerIds)];
+
+    // Load desired players with tier+team
+    const newPlayers: Player[] = [];
+    for (const pid of uniqueIds) {
+      newPlayers.push(await this.playersService.findById(pid));
+    }
+
+    // Check eliminated teams
+    for (const p of newPlayers) {
+      if (p.team.eliminated) {
+        throw new BadRequestException(`${p.name}-ის გუნდი ელიმინირებულია.`);
+      }
+    }
+
+    // Pre-check marketplace (re-checked inside transaction)
+    const preStatus = await this.getStatus();
+    if (!preStatus.isOpen) {
+      throw new ForbiddenException('სატრანსფერო ფანჯარა დახურულია. ელოდე ეტაპის პაუზას.');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Re-check marketplace inside transaction
+      const status = await queryRunner.manager.findOne(MarketplaceStatus, { where: { id: 1 } });
+      if (!status?.isOpen) {
+        throw new ForbiddenException('სატრანსფერო ფანჯარა დახურულია.');
+      }
+
+      // Lock user
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) throw new NotFoundException('მომხმარებელი ვერ მოიძებნა');
+
+      // Lock user team
+      let userTeam = await queryRunner.manager.findOne(UserTeam, {
+        where: { userId },
+        lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
+      });
+      if (!userTeam) {
+        userTeam = queryRunner.manager.create(UserTeam, {
+          userId,
+          formation: '4-3-3',
+          captainId: null,
+        });
+        userTeam = await queryRunner.manager.save(UserTeam, userTeam);
+      }
+
+      // Current team players
+      const currentUtps = await queryRunner.manager.find(UserTeamPlayer, {
+        where: { userTeamId: userTeam.id },
+        relations: ['player'],
+      });
+      const currentPlayerIds = new Set(currentUtps.map((u) => u.playerId));
+
+      // Filter: only buy players not already in team
+      const toBuyPlayers = newPlayers.filter((p) => !currentPlayerIds.has(p.id));
+
+      if (toBuyPlayers.length === 0) {
+        await queryRunner.rollbackTransaction();
+        return {
+          message: 'ყველა ფეხბურთელი უკვე გუნდშია',
+          coinsLeft: Number(user.coins),
+          bought: [],
+        };
+      }
+
+      // Validate team size after additions
+      const finalSize = currentUtps.length + toBuyPlayers.length;
+      if (finalSize > TEAM_MAX) {
+        throw new BadRequestException(
+          `გუნდში მაქსიმუმ ${TEAM_MAX} ფეხბ. ახლა: ${currentUtps.length}, ამატებ: ${toBuyPlayers.length}, სულ: ${finalSize}`,
+        );
+      }
+
+      // Validate position limits on combined team (current + new)
+      const combinedPositions = [
+        ...currentUtps.map((u) => u.player.position),
+        ...toBuyPlayers.map((p) => p.position),
+      ];
+      for (const pos of Object.keys(POSITION_MAX) as PlayerPosition[]) {
+        const count = combinedPositions.filter((p) => p === pos).length;
+        if (count > POSITION_MAX[pos]) {
+          throw new BadRequestException(
+            `${pos} პოზიციაზე მაქსიმუმ ${POSITION_MAX[pos]}. ყიდვის შემდეგ იქნება: ${count}`,
+          );
+        }
+      }
+
+      // Calculate total cost
+      const totalCost = toBuyPlayers.reduce((sum, p) => sum + Number(p.tier.coinPrice), 0);
+      let currentCoins = Number(user.coins);
+
+      if (currentCoins < totalCost) {
+        throw new BadRequestException(
+          `არასაკმარისი Coin-ები. ბალანსი: ${currentCoins}, საჭირო: ${totalCost}`,
+        );
+      }
+
+      const boughtNames: string[] = [];
+
+      // Process buys
+      for (const player of toBuyPlayers) {
+        const price = Number(player.tier.coinPrice);
+        const newCoins = currentCoins - price;
+
+        await queryRunner.manager.save(
+          queryRunner.manager.create(UserTeamPlayer, {
+            userTeamId: userTeam.id,
+            playerId: player.id,
+            isStarter: false,
+            subOrder: null,
+          }),
+        );
+
+        await queryRunner.manager.save(
+          queryRunner.manager.create(UserTeamHistory, {
+            userId,
+            playerId: player.id,
+            playerName: player.name,
+            action: TransferAction.BUY,
+            coinAmount: price,
+          }),
+        );
+
+        await this.transactionsService.log(
+          queryRunner.manager,
+          userId,
+          TransactionType.PLAYER_BUY,
+          price,
+          currentCoins,
+          newCoins,
+          `Bought ${player.name}`,
+        );
+
+        currentCoins = newCoins;
+        boughtNames.push(player.name);
+      }
+
+      // Update user balance once
+      await queryRunner.manager.update(User, userId, { coins: currentCoins });
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: `${boughtNames.length} ფეხბურთელი დაემატა გუნდს`,
+        coinsLeft: currentCoins,
+        bought: boughtNames,
+      };
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;

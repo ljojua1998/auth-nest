@@ -15,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { MarketplaceService } from './marketplace.service';
 import { BuySellDto } from './dto/buy-sell.dto';
+import { SaveTeamDto } from './dto/save-team.dto';
 import { FilterPlayersDto } from '../players/dto/filter-players.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -46,6 +47,17 @@ export class MarketplaceController {
   @ApiResponse({ status: 403, description: 'Marketplace დახურულია' })
   buy(@Request() req: { user: { id: number } }, @Body() dto: BuySellDto) {
     return this.marketplaceService.buy(req.user.id, dto.playerId);
+  }
+
+  @Post('save-team')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'გუნდის შენახვა — batch ყიდვა ერთ request-ში (გაყიდვა არ ხდება)' })
+  @ApiResponse({ status: 201, description: 'ახალი ფეხბურთელები დაემატა გუნდს' })
+  @ApiResponse({ status: 400, description: 'არასაკმარისი Coin / პოზიციის ლიმიტი / გუნდი სავსე / ელიმინირებული' })
+  @ApiResponse({ status: 403, description: 'სატრანსფერო ფანჯარა დახურულია' })
+  saveTeam(@Request() req: { user: { id: number } }, @Body() dto: SaveTeamDto) {
+    return this.marketplaceService.saveTeam(req.user.id, dto.playerIds);
   }
 
   @Post('sell')

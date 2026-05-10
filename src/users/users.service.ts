@@ -154,7 +154,7 @@ export class UsersService {
     return {
       referralCode: user.referralCode,
       referredCount,
-      totalEarned: referredCount * 10_000_000,
+      totalEarned: referredCount * 1_000_000,
     };
   }
 }
