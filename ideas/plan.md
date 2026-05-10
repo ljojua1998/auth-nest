@@ -6,9 +6,9 @@
 
 ---
 
-## Implementation Status (2026-05-03)
+## Implementation Status (2026-05-10)
 
-**სრულად დასრულებული:** Sprint 1–5 + QA rounds 1&2 + Security audit + Referral system + Railway deploy + Frontend API docs + Marketplace bug fix
+**სრულად დასრულებული:** Sprint 1–5 + QA rounds 1&2 + Security audit + Referral system + Railway deploy + Frontend API docs + Marketplace bug fix + save-team + Coin economy + Migration 006 + Player sync (99/1739)
 
 ### Endpoint Status
 
@@ -77,7 +77,8 @@
 | POST /admin/match-status/:matchId | DONE |
 | POST /admin/matches | DONE |
 | POST /admin/matches/:matchId/stats | DONE |
-| POST /admin/sync-match-stats/:matchId | TODO (API-Football paid plan) |
+| POST /market/save-team | DONE (batch buy, commit 259cbe6) |
+| POST /admin/sync-match-stats/:matchId | TODO (ტურნირის დროს) |
 
 ### DB Migrations
 
@@ -88,7 +89,7 @@
 | 003 | PromoRedemptionUniqueConstraint | RUN |
 | 004 | AddReferralCode | RUN |
 | 005 | AddMissingIndexes | RUN |
-| 006 | AddPlayerFields (age/number/birthDate/...) | TODO |
+| 006 | AddPlayerDetails (number/age/birthDate/height/weight/injured/rating/lastSyncAt) | RUN |
 
 ### Player Data
 
@@ -96,11 +97,12 @@
 |-|-|
 | სულ ფეხბ. | 1,739 |
 | სულ ნაკრები DB-ში | 82 (48 WC + UEFA qualifiers) |
+| Synced (detail) | 99/1,739 (2026-05-10) |
 | Superstar tier | 23 |
 | Strong tier | 725 |
 | Average tier | 723 |
 | Reserve tier | 268 |
-| მკლოდ IRL squad | 1 (API limit hit) |
+| IRL squad | 0 (TODO — ხვალის batch) |
 
 ---
 

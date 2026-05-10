@@ -24,11 +24,14 @@
 | Phase 6 — Frontend API Docs | DONE | ideas/api-docs.md |
 | Phase 6 — Bug fix: marketplace open/close | DONE | commit 91457d8 |
 | Phase 6 — Bug fix: buy/sell 500 (FOR UPDATE + LEFT JOIN) | DONE | commit 0c8810f |
-| Phase 7 — Player Data Sync | TODO | ideas/limit.md |
+| Phase 7 — save-team batch buy endpoint | DONE | commit 259cbe6 |
+| Phase 7 — Coin economy (10M reg, 1M referral) | DONE | commit 259cbe6 |
+| Phase 7 — Migration 006 (player detail fields) | DONE | migration 006 |
+| Phase 7 — Player detail sync (99/1739) | IN PROGRESS | scripts/sync-player-details.js |
 
 **მიმდინარე Deploy:** Railway — `https://auth-nest-production.up.railway.app`
-**DB:** Railway PostgreSQL (5 migrations run: 001–005)
-**Player Data:** 1,739 ფეხბ. / 82 ნაკრები (48 WC 2026 + UEFA qualifiers)
+**DB:** Railway PostgreSQL (6 migrations run: 001–006)
+**Player Data:** 1,739 ფეხბ. / 82 ნაკრები (99 synced, 1,640 remaining)
 **Test Admin:** test1@gmail.com / testtest1 (ID:9, role:admin)
 **Marketplace:** production-ზე OPEN
 
@@ -75,9 +78,9 @@ src/
 │   └── guards/     — RolesGuard
 ├── tiers/          — Player price tiers (Superstar/Strong/Average/Backup/Reserve)
 ├── teams/          — 48 WC 2026 national teams (groups A-L)
-├── players/        — Players (position, tier, team, apiFootballId)
+├── players/        — Players (position, tier, team, apiFootballId, age, number, rating...)
 ├── user-teams/     — User fantasy team (15 players, formation, captain, lineup)
-├── marketplace/    — Buy/sell players (PESSIMISTIC_WRITE, open/close)
+├── marketplace/    — Buy/sell/save-team players (PESSIMISTIC_WRITE, open/close)
 ├── cards/          — Triple Captain / Wildcard / Limitless (one-time per tournament)
 ├── tournaments/    — Tournament stages (group/R32/R16/QF/SF/3rd/Final)
 ├── matches/        — Matches + stats + user scores
@@ -87,12 +90,13 @@ src/
 ├── promotions/     — Promo codes + redemptions
 ├── admin/          — All admin operations
 ├── chat/           — AI chat (Gemini, WebSocket)
-├── migrations/     — 001–005 TypeORM migrations
+├── migrations/     — 001–006 TypeORM migrations
 ├── app.module.ts
 └── main.ts
 
 scripts/
-└── seed-uefa.js    — UEFA teams + players seed (API-Football)
+├── seed-uefa.js            — UEFA teams + players seed (API-Football)
+└── sync-player-details.js  — Player detail sync (daily batch, 100 req/day free plan)
 
 ideas/
 ├── idea.md         — სრული სპეციფიკაცია
@@ -104,21 +108,25 @@ ideas/
 ├── bugs2.md        — QA Bug Report (28 bugs)
 ├── security.md     — Security Audit Report
 ├── qa-security.md  — Security QA Test Results
-└── limit.md        — Player Data Sync Plan (paid API plan)
+├── api-docs.md     — Frontend API Documentation
+└── limit.md        — Player Data Sync Plan
 ```
 
 ---
 
 ## Business Rules (კრიტიკული)
 
-- ახალი user → **1,000,000 Coins** (registration-ზე)
-- ყველა Coin ოპერაცია → `transactions` ცხრილში (Phase 4)
+- ახალი user → **10,000,000 Coins** (registration-ზე)
+- რეფერალი → **1,000,000 Coins** ბონუსი (მომწვევს)
+- ყველა Coin ოპერაცია → `transactions` ცხრილში
 - Coin ბალანსი **ვერ წავა მინუსში** — 3 layer: DTO → Service (PESSIMISTIC_WRITE) → DB
 - User team: **15 ფეხბ.** (11 starter + 4 sub), max ერთი ნაკრებიდან unlimited
 - ფორმაციები: `3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1`
 - კაპიტანი: **x2** ქულა, Triple Captain: **x3** (ერთჯერადი)
 - Cards (Wildcard/Limitless/TC): **one-time** per tournament
-- Marketplace: **დახურულია** მატჩების დროს, **იხსნება** ეტაპებს შორის
+- Marketplace (სატრანსფერო ფანჯარა): **დახურულია** მატჩების დროს, **იხსნება** ეტაპებს შორის
+- ყიდვა და გაყიდვა — მხოლოდ სატრანსფერო ფანჯარა ღია რომ არის
+- `POST /market/save-team` — batch ყიდვა ერთ request-ში (გაყიდვა არ ხდება)
 - eliminated ნაკრების ფეხბ. → ავტომატური ამოშლა + Coin refund
 
 ---
@@ -144,7 +152,7 @@ GEMINI_API_KEY=your-gemini-key
 NODE_ENV=production                    # production-ში Swagger გამორთავს, synchronize: false
 CORS_ORIGIN=https://your-frontend.com  # CORS whitelist (optional — default: false prod-ზე)
 NODE_TLS_REJECT_UNAUTHORIZED=0         # Railway internal SSL-ისთვის
-API_FOOTBALL_KEY=your-key-here         # Phase 7 — paid plan-ზე
+API_FOOTBALL_KEY=9ee469c18a...         # API-Football key (free plan: 100 req/day)
 ```
 
 ---
@@ -165,19 +173,21 @@ npm run migration:run
 
 # UEFA players seed (Node.js script — API-Football):
 # node scripts/seed-uefa.js   (100 req/day limit — 7s delay)
+
+# Player detail sync (daily batch):
+# node scripts/sync-player-details.js   (100 req/day, ~7s/req, ~12min/batch)
 ```
 
 Swagger (dev): `http://localhost:3000/api`
 Production: `https://auth-nest-production.up.railway.app`
 
-## გასაკეთებელი (Phase 7)
+## გასაკეთებელი (Phase 7 — მიმდინარე)
 
 | # | Task | სტატუსი |
 |---|------|---------|
-| 1 | Player fields migration (age/number/birthDate/height/weight/injured/rating) | TODO |
-| 2 | Squad re-seed — age + number ველები (0 API requests) | TODO |
-| 3 | Republic of Ireland squad (1 API request) | TODO |
-| 4 | `POST /admin/players/sync-details` — paid plan (~1,739 req) | TODO (paid plan) |
-| 5 | Daily injury cron (`@nestjs/schedule`) | TODO (ტურნირის დროს) |
-| 6 | Match stats auto-sync cron | TODO (ტურნირის დროს) |
-| 7 | Beta testing (10-20 user) | TODO |
+| 1 | Player fields migration 006 | DONE |
+| 2 | Player detail sync (99/1739 — ყოველდღე 100) | IN PROGRESS |
+| 3 | Republic of Ireland squad (filter გასწორდა, ხვალის batch-ში) | TODO |
+| 4 | Daily injury cron (`@nestjs/schedule`) | TODO (ტურნირის დროს) |
+| 5 | Match stats auto-sync cron | TODO (ტურნირის დროს) |
+| 6 | Beta testing (10-20 user) | TODO |
